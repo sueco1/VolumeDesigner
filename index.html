@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parametric Triangle Designer</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg2pdf.js/2.2.0/svg2pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -49,20 +49,22 @@
     </div>
 
     <div id="viewer-container">
-        <svg id="main-svg" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <polygon id="triUp" />
-                <polygon id="triDown" />
-                <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                    <polygon points="0 0, 6 3, 0 6" fill="#555" />
-                </marker>
-            </defs>
-            <g id="geometry-group">
-                <rect id="outerRect" x="0" y="0" />
-                <g id="triangleContainer"></g>
-            </g>
-            <g id="dimensions-group"></g>
-        </svg>
+        <div id="capture-area" style="padding: 60px; background: white; display: inline-block;">
+            <svg id="main-svg" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <polygon id="triUp" />
+                    <polygon id="triDown" />
+                    <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                        <polygon points="0 0, 6 3, 0 6" fill="#555" />
+                    </marker>
+                </defs>
+                <g id="geometry-group">
+                    <rect id="outerRect" x="0" y="0" />
+                    <g id="triangleContainer"></g>
+                </g>
+                <g id="dimensions-group"></g>
+            </svg>
+        </div>
     </div>
 
     <script src="script.js"></script>
