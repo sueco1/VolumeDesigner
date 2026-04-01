@@ -77,10 +77,14 @@ function addTrianglePolygon(x, y, b, th, direction) {
 
 function addTechnicalSpecs(W, H, b, th, sh, sv, rows, cols) {
     const g = elements.dimGroup;
+    g.innerHTML = ''; 
+
     const addText = (content, x, y, size = "11px", bold = false) => {
         const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        txt.setAttribute('x', x); txt.setAttribute('y', y);
-        txt.style.fontFamily = 'monospace'; txt.style.fontSize = size;
+        txt.setAttribute('x', x); 
+        txt.setAttribute('y', y);
+        txt.style.fontFamily = 'monospace'; 
+        txt.style.fontSize = size;
         if (bold) txt.style.fontWeight = 'bold';
         txt.textContent = content;
         g.appendChild(txt);
@@ -88,16 +92,29 @@ function addTechnicalSpecs(W, H, b, th, sh, sv, rows, cols) {
 
     const labelY = H + 45;
     const valueY = H + 60;
+
+    // Calculate total count: Upward triangles (cols * rows) + Downward triangles ((cols-1) * rows)
+    const totalTriangles = (cols * rows) + ((cols - 1) * rows);
+
     addText("TECHNICAL SPECIFICATIONS", 0, H + 25, "13px", true);
+    
+    // Column 1: Canvas
     addText("CANVAS SIZE", 0, labelY, "10px", true);
     addText(`${W}x${H}mm`, 0, valueY);
-    addText("TRIANGLE (B/H)", 150, labelY, "10px", true);
-    addText(`${b}x${th}mm`, 150, valueY);
-    addText("SPACING (H/V)", 300, labelY, "10px", true);
-    addText(`${sh}x${sv}mm`, 300, valueY);
-    addText("GRID DENSITY", 450, labelY, "10px", true);
-    addText(`${cols} Cols / ${rows} Rows`, 450, valueY);
 
+    // Column 2: Triangle
+    addText("TRIANGLE (B/H)", 140, labelY, "10px", true);
+    addText(`${b}x${th}mm`, 140, valueY);
+
+    // Column 3: Spacing
+    addText("SPACING (H/V)", 280, labelY, "10px", true);
+    addText(`${sh}x${sv}mm`, 280, valueY);
+
+    // Column 4: Grid & Total (Updated)
+    addText("GRID / TOTAL COUNT", 420, labelY, "10px", true);
+    addText(`${cols}x${rows} / ${totalTriangles} Units`, 420, valueY);
+
+    // Dimension Lines (Arrows)
     const drawDim = (x1, y1, x2, y2, label, tx, ty) => {
         const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         l.setAttribute('x1', x1); l.setAttribute('y1', y1);
@@ -108,6 +125,7 @@ function addTechnicalSpecs(W, H, b, th, sh, sv, rows, cols) {
         g.appendChild(l);
         addText(label, tx, ty, "10px", true);
     };
+
     drawDim(0, -25, W, -25, `${W}mm`, W/2 - 15, -30); 
     drawDim(-30, 0, -30, H, `${H}mm`, -75, H/2);     
 }
@@ -116,46 +134,93 @@ async function exportToPdf() {
     const { jsPDF } = window.jspdf;
     const captureArea = document.getElementById('capture-area');
     const triangles = document.querySelectorAll('.design-tri');
+    const dimGroup = document.getElementById('dimensions-group');
 
     const W = parseFloat(elements.w.value) || 100;
     const H = parseFloat(elements.h.value) || 100;
 
     try {
-        // 1. FORCE HOLLOW: Remove all fills directly
+        // 1. PREP FOR EXPORT
+        // Hide the "on-screen" parameter table so it doesn't double up or cause stretching
+        dimGroup.style.display = 'none';
+
+        // Make triangles hollow
         triangles.forEach(tri => {
             tri.style.fill = 'none';
             tri.setAttribute('fill', 'none');
             tri.setAttribute('stroke', '#000000');
         });
 
-        // 2. WAIT: Give the browser plenty of time to re-render
         await new Promise(resolve => setTimeout(resolve, 300)); 
 
-        // 3. CAPTURE
+        // 2. CAPTURE
         const canvas = await html2canvas(captureArea, {
-            scale: 3,
+            scale: 2,
             useCORS: true,
             backgroundColor: '#ffffff'
         });
-        
         const imgData = canvas.toDataURL('image/png');
+
+        // 3. PDF SETUP (A3 Landscape: 420mm x 297mm)
+        const pdfW = 420;
+        const pdfH = 297;
+        const doc = new jsPDF('l', 'mm', [pdfW, pdfH]);
+
+        // 4. PREVENT STRETCHING (Calculate Aspect Ratio)
+        const margin = 20;
+        const maxDisplayW = pdfW - (margin * 2);
+        const maxDisplayH = pdfH - 90; // Leave room for footer
         
-        // 4. GENERATE PDF
-        const doc = new jsPDF({
-            orientation: W > H ? 'l' : 'p',
-            unit: 'mm',
-            format: [W + 160, H + 160]
-        });
+        const canvasRatio = canvas.width / canvas.height;
+        let finalW, finalH;
 
-        doc.addImage(imgData, 'PNG', 0, 0, W + 160, H + 160);
+        if (canvasRatio > (maxDisplayW / maxDisplayH)) {
+            finalW = maxDisplayW;
+            finalH = maxDisplayW / canvasRatio;
+        } else {
+            finalH = maxDisplayH;
+            finalW = maxDisplayH * canvasRatio;
+        }
+
+        // Center the image horizontally
+        const xCentered = (pdfW - finalW) / 2;
+
+        doc.addImage(imgData, 'PNG', xCentered, margin, finalW, finalH);
+
+        // 5. DRAW CLEAN FOOTER TABLE (Fixed Size)
+        const tableY = pdfH - 35;
+        doc.setDrawColor(180);
+        doc.line(margin, tableY - 8, pdfW - margin, tableY - 8); 
+
+        doc.setFont("courier", "bold");
+        doc.setFontSize(14);
+        doc.text("TECHNICAL SPECIFICATIONS", margin, tableY);
+
+        doc.setFontSize(10);
+        doc.setFont("courier", "normal");
+        
+        // Data points
+        const b = elements.base.value;
+        const th = elements.triH.value;
+        const sh = elements.fill.checked ? 10 : elements.sh.value;
+        const sv = elements.fill.checked ? 10 : elements.sv.value;
+        const rowStep = parseFloat(th) + parseFloat(sv);
+        const cols = Math.floor((W + parseFloat(sh)) / (parseFloat(b) + parseFloat(sh)));
+        const rows = Math.floor((H + parseFloat(sv)) / rowStep);
+        const total = (cols * rows) + ((cols - 1) * rows);
+
+        doc.text(`CANVAS SIZE: ${W}x${H}mm`, margin, tableY + 10);
+        doc.text(`TRIANGLE:    ${b}x${th}mm`, margin + 90, tableY + 10);
+        doc.text(`SPACING:     ${sh}x${sv}mm`, margin + 180, tableY + 10);
+        doc.text(`TOTAL UNITS: ${total}`, margin + 270, tableY + 10);
+
+        // 6. RESTORE WEB APP
+        dimGroup.style.display = 'block';
         doc.save(`Technical_Drawing_${W}x${H}mm.pdf`);
-
-        // We leave the app hollow so the user sees it worked. 
-        // Moving any slider will trigger draw() and bring colors back.
 
     } catch (error) {
         console.error("Export Error:", error);
-        alert("Export failed. See console.");
+        alert("Export failed. Check console.");
     }
 }
 
