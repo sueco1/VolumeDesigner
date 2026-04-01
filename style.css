@@ -76,5 +76,15 @@ button:hover { background: #219150; }
     stroke-width: 1;
 }
 
+/* Remove display:none from #dimensions-group if you had it */
+#dimensions-group {
+    display: block;
+}
+
+/* Hide only the parameter table on the webapp */
+#specs-text-table {
+    display: none;
+}
+
 .dim-line { stroke: #7f8c8d; stroke-width: 1; }
 .dim-text { font-size: 11px; fill: #2c3e50; font-weight: bold; }

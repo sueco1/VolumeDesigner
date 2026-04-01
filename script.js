@@ -79,6 +79,11 @@ function addTechnicalSpecs(W, H, b, th, sh, sv, rows, cols) {
     const g = elements.dimGroup;
     g.innerHTML = ''; 
 
+    // Create a sub-group for the text table so we can hide it easily
+    const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    textGroup.setAttribute('id', 'specs-text-table');
+    g.appendChild(textGroup);
+
     const addText = (content, x, y, size = "11px", bold = false) => {
         const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         txt.setAttribute('x', x); 
@@ -87,47 +92,47 @@ function addTechnicalSpecs(W, H, b, th, sh, sv, rows, cols) {
         txt.style.fontSize = size;
         if (bold) txt.style.fontWeight = 'bold';
         txt.textContent = content;
-        g.appendChild(txt);
+        textGroup.appendChild(txt); // Add to the sub-group
     };
 
+    // ... (Keep all your existing addText calls for Canvas, Triangle, Spacing, etc.) ...
     const labelY = H + 45;
     const valueY = H + 60;
-
-    // Calculate total count: Upward triangles (cols * rows) + Downward triangles ((cols-1) * rows)
     const totalTriangles = (cols * rows) + ((cols - 1) * rows);
 
     addText("TECHNICAL SPECIFICATIONS", 0, H + 25, "13px", true);
-    
-    // Column 1: Canvas
     addText("CANVAS SIZE", 0, labelY, "10px", true);
     addText(`${W}x${H}mm`, 0, valueY);
-
-    // Column 2: Triangle
     addText("TRIANGLE (B/H)", 140, labelY, "10px", true);
     addText(`${b}x${th}mm`, 140, valueY);
-
-    // Column 3: Spacing
     addText("SPACING (H/V)", 280, labelY, "10px", true);
     addText(`${sh}x${sv}mm`, 280, valueY);
-
-    // Column 4: Grid & Total (Updated)
     addText("GRID / TOTAL COUNT", 420, labelY, "10px", true);
     addText(`${cols}x${rows} / ${totalTriangles} Units`, 420, valueY);
 
-    // Dimension Lines (Arrows)
+    // Dimension Lines (These stay in the main g group, not the textGroup)
     const drawDim = (x1, y1, x2, y2, label, tx, ty) => {
         const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         l.setAttribute('x1', x1); l.setAttribute('y1', y1);
         l.setAttribute('x2', x2); l.setAttribute('y2', y2);
         l.setAttribute('stroke', '#333');
+        l.setAttribute('stroke-width', '1.5'); // Make them slightly thicker to be seen
         l.setAttribute('marker-start', 'url(#arrowhead)');
         l.setAttribute('marker-end', 'url(#arrowhead)');
         g.appendChild(l);
-        addText(label, tx, ty, "10px", true);
+        
+        // Add label for the arrow
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', tx); 
+        txt.setAttribute('y', ty);
+        txt.style.fontSize = "12px";
+        txt.style.fontWeight = "bold";
+        txt.textContent = label;
+        g.appendChild(txt);
     };
 
-    drawDim(0, -25, W, -25, `${W}mm`, W/2 - 15, -30); 
-    drawDim(-30, 0, -30, H, `${H}mm`, -75, H/2);     
+    drawDim(0, -25, W, -25, `${W}mm`, W/2 - 15, -35); 
+    drawDim(-35, 0, -35, H, `${H}mm`, -75, H/2);     
 }
 
 async function exportToPdf() {
