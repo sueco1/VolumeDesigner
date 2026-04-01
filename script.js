@@ -118,18 +118,38 @@ function addDimensions(W, H, b, th) {
 }
 
 async function exportToPdf() {
-    const W = parseFloat(elements.w.value);
-    const H = parseFloat(elements.h.value);
-    const margin = 60;
+    const { jsPDF } = window.jspdf;
     
+    // 1. Get dimensions from inputs
+    const W = parseFloat(elements.w.value) || 100;
+    const H = parseFloat(elements.h.value) || 100;
+    const margin = 60; // Same margin used in the draw() function
+    
+    // 2. Create the PDF with a custom size to match our SVG Viewbox
     const doc = new jsPDF({
         orientation: W > H ? 'l' : 'p',
         unit: 'mm',
         format: [W + margin * 2, H + margin * 2]
     });
 
-    await doc.svg(elements.svg, { x: 0, y: 0, width: W + margin * 2, height: H + margin * 2 });
-    doc.save("triangle_design.pdf");
+    // 3. Select the SVG element
+    const svgElement = document.getElementById('main-svg');
+
+    // 4. Use the svg2pdf logic (the .svg() method is added by the second library)
+    try {
+        await doc.svg(svgElement, {
+            x: 0,
+            y: 0,
+            width: W + margin * 2,
+            height: H + margin * 2
+        });
+
+        // 5. Save the file
+        doc.save(`Triangle_Design_${W}x${H}mm.pdf`);
+    } catch (error) {
+        console.error("PDF Export failed:", error);
+        alert("There was an error generating the PDF. Check the console for details.");
+    }
 }
 
 // Initialize
