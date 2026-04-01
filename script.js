@@ -132,96 +132,81 @@ function addTechnicalSpecs(W, H, b, th, sh, sv, rows, cols) {
 
 async function exportToPdf() {
     const { jsPDF } = window.jspdf;
-    const captureArea = document.getElementById('capture-area');
     const triangles = document.querySelectorAll('.design-tri');
-    const dimGroup = document.getElementById('dimensions-group');
-
+    
+    // Get actual dimensions
     const W = parseFloat(elements.w.value) || 100;
     const H = parseFloat(elements.h.value) || 100;
 
-    try {
-        // 1. PREP FOR EXPORT
-        // Hide the "on-screen" parameter table so it doesn't double up or cause stretching
-        dimGroup.style.display = 'none';
+    // 1. Setup A3 PDF (420x297mm)
+    const pdfW = 420;
+    const pdfH = 297;
+    const doc = new jsPDF('l', 'mm', [pdfW, pdfH]);
 
-        // Make triangles hollow
-        triangles.forEach(tri => {
-            tri.style.fill = 'none';
-            tri.setAttribute('fill', 'none');
-            tri.setAttribute('stroke', '#000000');
+    // 2. Calculate "Zoom" (Scale to fit A3 Safe Zone)
+    const margin = 20;
+    const footerH = 40;
+    const availW = pdfW - (margin * 2);
+    const availH = pdfH - (margin * 2) - footerH;
+
+    // This ratio determines how much we "zoom" the drawing to fill the A3 sheet
+    const scale = Math.min(availW / W, availH / H);
+    
+    const finalW = W * scale;
+    const finalH = H * scale;
+    const xOff = (pdfW - finalW) / 2;
+    const yOff = margin + (availH - finalH) / 2;
+
+    // 3. Draw Background Rect (Hollow)
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.2);
+    doc.rect(xOff, yOff, finalW, finalH);
+
+    // 4. Draw Triangles directly as Vectors (No Black Boxes!)
+    doc.setLineWidth(0.1);
+    triangles.forEach(tri => {
+        const pointsStr = tri.getAttribute('points');
+        if (!pointsStr) return;
+
+        // Convert SVG coordinates to PDF coordinates
+        const coords = pointsStr.split(' ').map(p => {
+            const [x, y] = p.split(',').map(Number);
+            return {
+                x: xOff + (x * scale),
+                y: yOff + (y * scale)
+            };
         });
 
-        await new Promise(resolve => setTimeout(resolve, 300)); 
+        // Draw the triangle outline in the PDF
+        doc.line(coords[0].x, coords[0].y, coords[1].x, coords[1].y);
+        doc.line(coords[1].x, coords[1].y, coords[2].x, coords[2].y);
+        doc.line(coords[2].x, coords[2].y, coords[0].x, coords[0].y);
+    });
 
-        // 2. CAPTURE
-        const canvas = await html2canvas(captureArea, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff'
-        });
-        const imgData = canvas.toDataURL('image/png');
+    // 5. Draw Technical Footer (Fixed size, high legibility)
+    const tableY = pdfH - 25;
+    doc.setDrawColor(180);
+    doc.line(margin, tableY - 10, pdfW - margin, tableY - 10); 
 
-        // 3. PDF SETUP (A3 Landscape: 420mm x 297mm)
-        const pdfW = 420;
-        const pdfH = 297;
-        const doc = new jsPDF('l', 'mm', [pdfW, pdfH]);
+    doc.setFont("courier", "bold");
+    doc.setFontSize(14);
+    doc.text("TECHNICAL SPECIFICATIONS", margin, tableY);
 
-        // 4. PREVENT STRETCHING (Calculate Aspect Ratio)
-        const margin = 20;
-        const maxDisplayW = pdfW - (margin * 2);
-        const maxDisplayH = pdfH - 90; // Leave room for footer
-        
-        const canvasRatio = canvas.width / canvas.height;
-        let finalW, finalH;
+    doc.setFont("courier", "normal");
+    doc.setFontSize(10);
+    
+    const b = elements.base.value;
+    const th = elements.triH.value;
+    const sh = elements.fill.checked ? 10 : elements.sh.value;
+    const sv = elements.fill.checked ? 10 : elements.sv.value;
+    const total = triangles.length;
 
-        if (canvasRatio > (maxDisplayW / maxDisplayH)) {
-            finalW = maxDisplayW;
-            finalH = maxDisplayW / canvasRatio;
-        } else {
-            finalH = maxDisplayH;
-            finalW = maxDisplayH * canvasRatio;
-        }
+    doc.text(`CANVAS: ${W}x${H}mm`, margin, tableY + 8);
+    doc.text(`TRIANGLE: ${b}x${th}mm`, margin + 90, tableY + 8);
+    doc.text(`SPACING: ${sh}x${sv}mm`, margin + 185, tableY + 8);
+    doc.text(`TOTAL UNITS: ${total}`, margin + 280, tableY + 8);
 
-        // Center the image horizontally
-        const xCentered = (pdfW - finalW) / 2;
-
-        doc.addImage(imgData, 'PNG', xCentered, margin, finalW, finalH);
-
-        // 5. DRAW CLEAN FOOTER TABLE (Fixed Size)
-        const tableY = pdfH - 35;
-        doc.setDrawColor(180);
-        doc.line(margin, tableY - 8, pdfW - margin, tableY - 8); 
-
-        doc.setFont("courier", "bold");
-        doc.setFontSize(14);
-        doc.text("TECHNICAL SPECIFICATIONS", margin, tableY);
-
-        doc.setFontSize(10);
-        doc.setFont("courier", "normal");
-        
-        // Data points
-        const b = elements.base.value;
-        const th = elements.triH.value;
-        const sh = elements.fill.checked ? 10 : elements.sh.value;
-        const sv = elements.fill.checked ? 10 : elements.sv.value;
-        const rowStep = parseFloat(th) + parseFloat(sv);
-        const cols = Math.floor((W + parseFloat(sh)) / (parseFloat(b) + parseFloat(sh)));
-        const rows = Math.floor((H + parseFloat(sv)) / rowStep);
-        const total = (cols * rows) + ((cols - 1) * rows);
-
-        doc.text(`CANVAS SIZE: ${W}x${H}mm`, margin, tableY + 10);
-        doc.text(`TRIANGLE:    ${b}x${th}mm`, margin + 90, tableY + 10);
-        doc.text(`SPACING:     ${sh}x${sv}mm`, margin + 180, tableY + 10);
-        doc.text(`TOTAL UNITS: ${total}`, margin + 270, tableY + 10);
-
-        // 6. RESTORE WEB APP
-        dimGroup.style.display = 'block';
-        doc.save(`Technical_Drawing_${W}x${H}mm.pdf`);
-
-    } catch (error) {
-        console.error("Export Error:", error);
-        alert("Export failed. Check console.");
-    }
+    doc.save(`Blueprints_${W}x${H}mm.pdf`);
 }
 
 // Listeners
