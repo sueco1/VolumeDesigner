@@ -3,141 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parametric Triangle Layout & PDF Export</title>
+    <title>Parametric Triangle Designer</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f2f5;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            box-sizing: border-box;
-        }
-
-        /* Input Controls Panel */
-        #controls {
-            width: 320px;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-        }
-
-        h2 { margin-top: 0; color: #333; font-size: 1.4rem;}
-        h3 { margin: 10px 0 5px; color: #555; font-size: 1.1rem;}
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        label { font-size: 0.9rem; color: #666; font-weight: 500;}
-        
-        input[type="number"] {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1rem;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        button#exportPdf {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: auto; /* Push to the bottom */
-        }
-        button#exportPdf:hover { background-color: #0056b3; }
-
-        /* Viewer Area */
-        #viewer-container {
-            flex-grow: 1;
-            padding-left: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: auto; /* Allows panning if needed */
-        }
-
-        /* The main SVG element */
-        #main-svg {
-            background-color: #fcfcfc;
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            /* Important for responsive scaling in view */
-            width: auto;
-            height: auto;
-            max-width: 100%;
-            max-height: 100%;
-        }
-
-        /* General styles for SVG text and dimensions */
-        .dim-text {
-            font-size: 10px;
-            font-family: Arial, sans-serif;
-            fill: #333;
-        }
-        .dim-line {
-            stroke: #555;
-            stroke-width: 0.5;
-        }
-    </style>
 </head>
 <body>
 
     <div id="controls">
-        <h2>Parameters (mm)</h2>
-        
+        <h2>Canvas (mm)</h2>
         <div class="input-group">
-            <label for="rectWidth">Rectangle Width (W)</label>
-            <input type="number" id="rectWidth" value="500" min="50" step="10">
+            <label>Width (W)</label>
+            <input type="number" id="rectWidth" value="600" min="50">
         </div>
         <div class="input-group">
-            <label for="rectHeight">Rectangle Height (H)</label>
-            <input type="number" id="rectHeight" value="300" min="50" step="10">
-        </div>
-
-        <h3>Triangle Size</h3>
-        <div class="input-group">
-            <label for="triBase">Triangle Base (b)</label>
-            <input type="number" id="triBase" value="60" min="10" step="1">
-        </div>
-        <div class="input-group">
-            <label for="triHeight">Triangle Height (h)</label>
-            <input type="number" id="triHeight" value="52" min="10" step="1">
+            <label>Height (H)</label>
+            <input type="number" id="rectHeight" value="400" min="50">
         </div>
 
-        <h3>Spacing (min 10mm)</h3>
+        <h3>Triangle (mm)</h3>
+        <div class="input-group">
+            <label>Base (b)</label>
+            <input type="number" id="triBase" value="80" min="10">
+        </div>
+        <div class="input-group">
+            <label>Height (h)</label>
+            <input type="number" id="triHeight" value="70" min="10">
+        </div>
+
+        <h3>Spacing</h3>
         <div class="checkbox-group">
             <input type="checkbox" id="fillMode" checked>
-            <label for="fillMode">Fill rectangle (max items)</label>
+            <label for="fillMode">Fill with copies (Min 10mm)</label>
         </div>
         <div class="input-group">
-            <label for="spacingHoriz">Horizontal Spacing (Sh)</label>
-            <input type="number" id="spacingHoriz" value="10" min="10" step="1" disabled>
+            <label>Horizontal (Sh)</label>
+            <input type="number" id="spacingHoriz" value="10" min="10" disabled>
         </div>
         <div class="input-group">
-            <label for="spacingVert">Vertical Spacing (Sv)</label>
-            <input type="number" id="spacingVert" value="10" min="10" step="1" disabled>
+            <label>Vertical (Sv)</label>
+            <input type="number" id="spacingVert" value="10" min="10" disabled>
         </div>
 
         <button id="exportPdf">Export Vector PDF</button>
@@ -146,313 +50,20 @@
     <div id="viewer-container">
         <svg id="main-svg" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <polygon id="triUp" class="triangle triUp" />
-                <polygon id="triDown" class="triangle triDown" />
-                
+                <polygon id="triUp" />
+                <polygon id="triDown" />
                 <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                     <polygon points="0 0, 6 3, 0 6" fill="#555" />
                 </marker>
             </defs>
             <g id="geometry-group">
-                <rect id="outerRect" x="0" y="0" style="fill:#e0f0ff;stroke:#000;stroke-width:0.5px" />
+                <rect id="outerRect" x="0" y="0" />
                 <g id="triangleContainer"></g>
             </g>
             <g id="dimensions-group"></g>
         </svg>
     </div>
 
-    <script>
-        // Access jsPDF from the window object
-        const { jsPDF } = window.jspdf;
-
-        const inputs = {
-            rectW: document.getElementById('rectWidth'),
-            rectH: document.getElementById('rectHeight'),
-            triBase: document.getElementById('triBase'),
-            triHeight: document.getElementById('triHeight'),
-            fillMode: document.getElementById('fillMode'),
-            spaceH: document.getElementById('spacingHoriz'),
-            spaceV: document.getElementById('spacingVert'),
-        };
-
-        const svgEl = document.getElementById('main-svg');
-        const triCont = document.getElementById('triangleContainer');
-        const dimCont = document.getElementById('dimensions-group');
-        const outerRect = document.getElementById('outerRect');
-
-        const MIN_SPACING = 10;
-
-        // Color palette based on the image
-        const COLORS = ['#d1cbc1', '#c1b181', '#3355a1', '#d99031', '#919191', '#b2d2e1', '#e0e1e1', '#b2d2e1', '#fcd250'];
-
-        // Function to select a random color from the palette
-        function getRandomColor() {
-            return COLORS[Math.floor(Math.random() * COLORS.length)];
-        }
-
-        // Handle enabling/disabling spacing inputs based on fillMode
-        inputs.fillMode.addEventListener('change', (e) => {
-            const isFillMode = e.target.checked;
-            inputs.spaceH.disabled = isFillMode;
-            inputs.spaceV.disabled = isFillMode;
-            updateGeometry();
-        });
-
-        // Add event listeners to all number inputs
-        [inputs.rectW, inputs.rectH, inputs.triBase, inputs.triHeight, inputs.spaceH, inputs.spaceV].forEach(input => {
-            input.addEventListener('input', updateGeometry);
-        });
-
-        // Initial setup
-        updateGeometry();
-
-        function updateGeometry() {
-            // Get values and enforce mins
-            let W = parseFloat(inputs.rectW.value) || 50;
-            let H = parseFloat(inputs.rectH.value) || 50;
-            let b = parseFloat(inputs.triBase.value) || 10;
-            let h = parseFloat(inputs.triHeight.value) || 10;
-            let isFill = inputs.fillMode.checked;
-            let Sh = isFill ? MIN_SPACING : Math.max(MIN_SPACING, parseFloat(inputs.spaceH.value) || MIN_SPACING);
-            let Sv = isFill ? MIN_SPACING : Math.max(MIN_SPACING, parseFloat(inputs.spaceV.value) || MIN_SPACING);
-
-            // Update visible input values if necessary (e.g., if user tried to go below min)
-            if (!isFill) {
-                inputs.spaceH.value = Sh;
-                inputs.spaceV.value = Sv;
-            }
-
-            // --- Define Triangle Points in its own coordinate system (origin at top point) ---
-            const triPointsUp = `0,0 ${-b/2},${h} ${b/2},${h}`;
-            const triPointsDown = `${-b/2},0 ${b/2},0 0,${h}`; // Or use a transformation matrix on the first one
-
-            // Set these on the <defs>
-            document.getElementById('triUp').setAttribute('points', triPointsUp);
-            document.getElementById('triDown').setAttribute('points', triPointsDown);
-
-            // Clear previous triangles and dimensions
-            triCont.innerHTML = '';
-            dimCont.innerHTML = '';
-
-            // Set SVG viewport size (this dictates physical size in PDF, but allows scaling in viewer)
-            // SVG uses user units, we'll treat 1 unit = 1mm
-            // We need extra space for dimensions
-            const dimMargin = 50; 
-            svgEl.setAttribute('viewBox', `-${dimMargin} -${dimMargin} ${W + 2*dimMargin} ${H + 2*dimMargin}`);
-            svgEl.setAttribute('width', W + 2*dimMargin); // Required for PDF capture
-            svgEl.setAttribute('height', H + 2*dimMargin); // Required for PDF capture
-
-            // Set main rectangle size and fill (this simulates the blue/grey sky color)
-            outerRect.setAttribute('width', W);
-            outerRect.setAttribute('height', H);
-            outerRect.setAttribute('fill', '#e0f0ff'); // A sky blue base color
-
-            // --- Generate Triangles ---
-            // Row calculation: row height is triHeight + Sv
-            const effectiveRowH = h + Sv;
-            const rows = Math.floor(H / effectiveRowH);
-            
-            // Vertical centering
-            const actualTotalH = rows * effectiveRowH - Sv; // Height from first triangle top to last triangle base
-            const topMargin = Math.max(0, (H - actualTotalH - h) / 2); // Start at top point of first row
-
-            for (let r = 0; r < rows; r++) {
-                const yPos = topMargin + r * effectiveRowH;
-                const isOddRow = (r % 2 === 1);
-
-                // --- Up-point Triangles in row ---
-                const numUpTri = isOddRow ? Math.floor(W / b) : Math.floor(W / b);
-                // Total horizontal space consumed by 'up' triangles and minimal gaps
-                // A better approach: gap is Sh between adjacent points. 
-                // X distance between centers/tops is b + Sh
-                const horizStep = b + Sh;
-                const numUpItems = Math.floor((W - b) / horizStep) + 1; // Correct formula: (AvailableWidth - FirstItemWidth)/Step + 1
-                
-                // Horizontal Centering
-                const actualTotalUpW = (numUpItems - 1) * horizStep + b;
-                let xStartUp = Math.max(0, (W - actualTotalUpW) / 2) + b/2; // Start from top point (x-origin)
-
-                for (let i = 0; i < numUpItems; i++) {
-                    const xPos = xStartUp + i * horizStep;
-                    createTriangle('triUp', xPos, yPos);
-                }
-
-                // --- Down-point Triangles (Tesselating in between) ---
-                // X distance between centers is still b + Sh
-                // X offset from 'up' tops is horizStep / 2.
-                const numDownItems = numUpItems - 1; 
-                let xStartDown = xStartUp + horizStep / 2;
-
-                for (let i = 0; i < numDownItems; i++) {
-                    const xPos = xStartDown + i * horizStep;
-                    createTriangle('triDown', xPos, yPos);
-                }
-            }
-
-            // --- Draw Dimensions ---
-            addDimensions(W, H, b, h, Sh, Sv);
-        }
-
-        function createTriangle(defId, x, y) {
-            const useEl = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-            useEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', `#${defId}`);
-            useEl.setAttribute('x', x);
-            useEl.setAttribute('y', y);
-            useEl.setAttribute('fill', getRandomColor()); // Apply color here for randomness per-use
-            useEl.setAttribute('stroke', '#000');
-            useEl.setAttribute('stroke-width', '0.5');
-            triCont.appendChild(useEl);
-        }
-
-        // --- PDF Export Function ---
-        document.getElementById('exportPdf').addEventListener('click', () => {
-            const svgContent = svgEl.innerHTML;
-            const W = parseFloat(inputs.rectW.value) || 50;
-            const H = parseFloat(inputs.rectH.value) || 50;
-            const b = parseFloat(inputs.triBase.value);
-            const h = parseFloat(inputs.triHeight.value);
-            const Sh = inputs.fillMode.checked ? MIN_SPACING : parseFloat(inputs.spaceH.value);
-            const Sv = inputs.fillMode.checked ? MIN_SPACING : parseFloat(inputs.spaceV.value);
-            const fillStat = inputs.fillMode.checked ? '(Auto-filled)' : '';
-
-            // Add margin for dimensions
-            const dimMargin = 50;
-            const pdfPageW = W + 2 * dimMargin;
-            const pdfPageH = H + 2 * dimMargin;
-
-            // Initialize PDF in landscape or portrait, based on aspect ratio
-            const orientation = (pdfPageW > pdfPageH) ? 'l' : 'p';
-            // Important: Set standard format or custom. Let's use custom size based on rectangle.
-            const doc = new jsPDF(orientation, 'mm', [pdfPageW, pdfPageH]);
-
-            // Clean up the SVG for output, ensuring no browser-specific artifacts
-            const svgCleaned = svgEl.cloneNode(true);
-            svgCleaned.removeAttribute('width');
-            svgCleaned.removeAttribute('height');
-            svgCleaned.removeAttribute('class'); // Remove any viewer classes
-            
-            // Add a title text to the PDF
-            doc.setFontSize(14);
-            doc.text(`Triangle Parametric Design: W=${W}, H=${H}, b=${b}, h=${h}, Sh=${Sh}, Sv=${Sv} ${fillStat}`, dimMargin, 15);
-
-            // Main function for rendering SVG: doc.svg()
-            doc.svg(svgEl, { 
-                x: 0, 
-                y: 0, 
-                width: pdfPageW, 
-                height: pdfPageH, 
-                load: (element, callback) => {
-                    // Need to wait for all resources to load (e.g. if we had images)
-                    callback();
-                }
-            }).then(() => {
-                doc.save(`triangles_design_${W}x${H}mm.pdf`);
-            });
-        });
-
-        // Function to create an SVG dimension line with text and arrows
-        function addDimLine(x1, y1, x2, y2, offset, text, pos='mid') {
-            const isHoriz = y1 === y2;
-            let finalX1, finalY1, finalX2, finalY2, textX, textY, textAnchor;
-
-            if (isHoriz) {
-                finalX1 = x1; finalY1 = y1 + offset;
-                finalX2 = x2; finalY2 = y2 + offset;
-                textX = (x1 + x2) / 2;
-                textY = finalY1 - 2; // Above the line
-                textAnchor = 'middle';
-                // Add tick marks at ends
-                addTick(x1, finalY1, 4, true);
-                addTick(x2, finalY2, 4, true);
-            } else { // Vertical
-                finalX1 = x1 + offset; finalY1 = y1;
-                finalX2 = x2 + offset; finalY2 = y2;
-                textX = finalX1 - 2; // Left of the line
-                textY = (y1 + y2) / 2;
-                textAnchor = 'end';
-                // Add tick marks at ends
-                addTick(finalX1, y1, 4, false);
-                addTick(finalX2, y2, 4, false);
-            }
-
-            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', finalX1);
-            line.setAttribute('y1', finalY1);
-            line.setAttribute('x2', finalX2);
-            line.setAttribute('y2', finalY2);
-            line.setAttribute('class', 'dim-line');
-            line.setAttribute('marker-start', 'url(#arrowhead)');
-            line.setAttribute('marker-end', 'url(#arrowhead)');
-            group.appendChild(line);
-
-            const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            textEl.setAttribute('x', textX);
-            textEl.setAttribute('y', textY);
-            textEl.setAttribute('class', 'dim-text');
-            textEl.setAttribute('text-anchor', textAnchor);
-            textEl.textContent = `${text} mm`;
-            group.appendChild(textEl);
-
-            dimCont.appendChild(group);
-        }
-
-        function addTick(cx, cy, size, isVerticalTick) {
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            if (isVerticalTick) { // Tesselates a horiz dimension line
-                line.setAttribute('x1', cx); line.setAttribute('y1', cy - size/2);
-                line.setAttribute('x2', cx); line.setAttribute('y2', cy + size/2);
-            } else { // Tesselates a vertical dimension line
-                line.setAttribute('x1', cx - size/2); line.setAttribute('y1', cy);
-                line.setAttribute('x2', cx + size/2); line.setAttribute('y2', cy);
-            }
-            line.setAttribute('stroke', '#555');
-            line.setAttribute('stroke-width', '0.5');
-            dimCont.appendChild(line);
-        }
-
-        // Add dimensions based on current parameters
-        function addDimensions(W, H, b, h, Sh, Sv) {
-            // Rectangle Dimensions (Outer)
-            addDimLine(0, 0, W, 0, -25, `W: ${W}`); // Top width
-            addDimLine(0, 0, 0, H, -25, `H: ${H}`); // Left height
-
-            // Sample Triangle/Spacing Dimensions (Internal/Right)
-            // Use the first up-triangle in the second row as a clear reference
-            // A row height is h+Sv
-            const effectiveRowH = h + Sv;
-            const rows = Math.floor(H / effectiveRowH);
-            if (rows >= 2) {
-                // Find top margin and base position for the target reference row (r=1)
-                const actualTotalH = rows * effectiveRowH - Sv;
-                const topMargin = Math.max(0, (H - actualTotalH - h) / 2);
-                
-                const refTriY = topMargin + effectiveRowH; // Top point of an up-tri in row 1
-                
-                // Find horizontal position of first up-tri
-                const horizStep = b + Sh;
-                const actualTotalUpW = (Math.floor((W - b) / horizStep)) * horizStep + b;
-                let xStartUp = Math.max(0, (W - actualTotalUpW) / 2) + b/2; 
-                
-                // Base of Triangle (b)
-                addDimLine(xStartUp - b/2, refTriY + h + 5, xStartUp + b/2, refTriY + h + 5, 5, `b: ${b}`); 
-                // Height of Triangle (h)
-                addDimLine(xStartUp + b/2 + 5, refTriY, xStartUp + b/2 + 5, refTriY + h, 5, `h: ${h}`);
-
-                // Vert Spacing (Sv) - between this triangle's base and the next row's top point
-                if (rows >= 3) {
-                    const nextRowY = refTriY + effectiveRowH;
-                    addDimLine(xStartUp + 5, refTriY + h, xStartUp + 5, nextRowY, 5, `Sv: ${Sv}`);
-                }
-
-                // Horiz Spacing (Sh) - between the top points of two adjacent up-triangles
-                const nextTriX = xStartUp + horizStep;
-                if (nextTriX < W) {
-                    addDimLine(xStartUp, refTriY - 10, nextTriX, refTriY - 10, 5, `Sh: ${Sh}`);
-                }
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
