@@ -118,8 +118,8 @@ function addDimensions(W, H, b, th) {
 }
 
 async function exportToPdf() {
-    // 1. Explicitly grab the classes from the global window object
     const { jsPDF } = window.jspdf;
+    // Use the global svg2pdf function
     const svg2pdf = window.svg2pdf;
 
     const W = parseFloat(elements.w.value) || 100;
@@ -135,8 +135,8 @@ async function exportToPdf() {
     const svgElement = document.getElementById('main-svg');
 
     try {
-        // 2. We use the svg2pdf function directly on the doc
-        await doc.svg(svgElement, {
+        // Direct call to svg2pdf
+        await svg2pdf(svgElement, doc, {
             x: 0,
             y: 0,
             width: W + margin * 2,
@@ -145,9 +145,8 @@ async function exportToPdf() {
 
         doc.save(`Triangle_Design_${W}x${H}mm.pdf`);
     } catch (error) {
-        // This will print the actual technical reason in your browser console (F12)
         console.error("Technical Error Details:", error);
-        alert("Export failed. Open the browser console (F12) to see the full error log.");
+        alert("Export failed again. Please check the console for a new error message.");
     }
 }
 
